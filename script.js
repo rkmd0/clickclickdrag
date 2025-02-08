@@ -1,12 +1,17 @@
-var map = L.map('map').setView([51.505, -0.09], 13);
+// initialize the map at münster
+var map = L.map('map').setView([51.9607, 7.6261], 13);
 
+// add the tile layer
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
+// initialize the featuregroup to store editable layers
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
+// initialize the draw control
 var drawControl = new L.Control.Draw({
     edit: {
         featureGroup: drawnItems
@@ -14,20 +19,72 @@ var drawControl = new L.Control.Draw({
     draw: {
         polygon: true,
         polyline: true,
-        rectangle: false,
+        rectangle: true,
         circle: false,
         marker: true
     }
 });
 map.addControl(drawControl);
 
+// handle drawing creation
 map.on(L.Draw.Event.CREATED, function (event) {
     var layer = event.layer;
     drawnItems.addLayer(layer);
 });
 
+// get updated feature count
+function updateFeatureCount(count) {
+    document.getElementById('count').textContent = count;
+}
+
+// function to save features to database
+function saveToDatabase() {
+    var data = drawnItems.toGeoJSON();
+    console.log("saving data:", JSON.stringify(data, null, 2));  // debuggingggg
+    const savePromises = data.features.map(feature => {
+        return fetch('/api/save-feature', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(feature)
+        })
+        .then(response => response.json())
+        .then(data => console.log('feature saved:', data))
+        .catch(error => console.error('error:', error));
+    });
+    Promise.all(savePromises)
+        .then(results => {
+            alert(`successfully saved ${results.length} features`);
+            loadFromDatabase(); // reload from database to get updated count
+
+        })
+        .catch(error => alert('Error saving features'));
+}
+
+function loadFromDatabase() {
+    drawnItems.clearLayers();
+    fetch('/api/get-features')
+        .then(response => response.json())
+        .then(features => {
+            console.log("fetched from DB:", features);
+            features.forEach(feature => {
+                var geoJSONLayer = L.geoJSON(feature);
+                geoJSONLayer.eachLayer(layer => {
+                    drawnItems.addLayer(layer);
+                });
+            });
+            // update the feature count
+            updateFeatureCount(features.length);
+        })
+        .catch(error => console.error('Error loading features:', error));
+}
+
+
+// export as geojson
 function exportGeoJSON() {
     var data = drawnItems.toGeoJSON();
-    console.log(JSON.stringify(data));
+    console.log(JSON.stringify(data, null, 2));
     alert("Check console for GeoJSON output");
 }
+
+// initialize
+loadFromDatabase();
