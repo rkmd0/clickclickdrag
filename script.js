@@ -32,6 +32,14 @@ map.on(L.Draw.Event.CREATED, function (event) {
     drawnItems.addLayer(layer);
 });
 
+// clear the map on command
+function clearMap() {
+    drawnItems.clearLayers();
+    updateFeatureCount(0);
+    console.log("map cleared");
+    //alert("map cleared");
+}
+
 // get updated feature count
 function updateFeatureCount(count) {
     document.getElementById('count').textContent = count;
