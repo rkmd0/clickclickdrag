@@ -1,2 +1,4 @@
 # you wouldn't want to download a car, would you
 node_modules/
+package-lock.json
+package.json
