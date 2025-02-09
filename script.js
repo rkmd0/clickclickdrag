@@ -2,10 +2,25 @@
 var map = L.map('map').setView([51.9607, 7.6261], 13);
 
 // add the tile layer
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
+
+var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '© Esri'
+});
+
+document.getElementById('baseMapSelect').addEventListener('change', function(e) {
+    if (e.target.value === 'osm') {
+        map.removeLayer(satelliteLayer);
+        map.addLayer(osmLayer);
+    } else if (e.target.value === 'satellite') {
+        map.removeLayer(osmLayer);
+        map.addLayer(satelliteLayer);
+    }
+});
 
 // initialize the featuregroup to store editable layers
 var drawnItems = new L.FeatureGroup();
